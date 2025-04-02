@@ -10,7 +10,7 @@
     "build": "tsc",
     "dev": "ts-node src/app.ts --watch"
   },
-  "author": "Aleksandr Kovalev",
+  "author": "Boris Slavinskiy",
   "license": "ISC",
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
