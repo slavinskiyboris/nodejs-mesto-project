@@ -1,84 +1,50 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import mongoose from 'mongoose';
+import cookieParser from 'cookie-parser';
+import { errors } from 'celebrate';
 import userRoutes from './routes/users';
 import cardRoutes from './routes/cards';
-import { Error as MongooseError } from 'mongoose';
-import { HTTP_STATUS } from './constants';
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: { _id: string };
-    }
-  }
-}
+import { authenticateUser, registerNewUser } from './controllers/users';
+import checkAuth from './middlewares/auth';
+import { requestLogger, errorLogger } from './middlewares/logger';
+import errorHandler from './middlewares/error-handler';
+import NotFound from './errors/not-found';
+import {
+  validateLoginCredentials,
+  validateUserRegistration,
+} from './validators/validators';
+import config from './config';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-mongoose.connect('mongodb://localhost:27017/mestodb')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('Error connecting to MongoDB:', err));
+mongoose.connect(config.MONGO_URL)
+  .then(() => console.log('Успешное подключение к MongoDB'))
+  .catch((err) => {
+    console.error('Ошибка подключения к MongoDB:', err);
+    process.exit(1);
+  });
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(requestLogger);
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  req.user = { _id: '67ebea489ed53a7d9593066e' };
-  next();
+app.post('/signin', validateLoginCredentials, authenticateUser);
+app.post('/signup', validateUserRegistration, registerNewUser);
+
+app.use('/users', checkAuth, userRoutes);
+app.use('/cards', checkAuth, cardRoutes);
+
+app.use('*', () => {
+  throw new NotFound('Ресурс не найден');
 });
 
-app.use(userRoutes);
-app.use(cardRoutes);
+app.use(errorLogger);
 
-app.get('/', (req, res) => {
-  res.send('Hello, world');
-});
-
-app.use((req, res) => {
-  res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Ресурс не найден' });
-});
-
-const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
-  if (err instanceof MongooseError.ValidationError) {
-    if (req.path === '/users/me') {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Переданы некорректные данные при обновлении профиля' });
-      return;
-    }
-    if (req.path === '/users/me/avatar') {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Переданы некорректные данные при обновлении аватара' });
-      return;
-    }
-    if (req.path === '/users') {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Переданы некорректные данные при создании пользователя' });
-      return;
-    }
-    if (req.path === '/cards') {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Переданы некорректные данные при создании карточки' });
-      return;
-    }
-  }
-
-  if (err instanceof MongooseError.CastError) {
-    if (req.path.includes('/cards/')) {
-      if (req.method === 'DELETE') {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Передан некорректный _id карточки' });
-      } else {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Переданы некорректные данные для постановки/снятия лайка' });
-      }
-      return;
-    }
-    if (req.path.includes('/users/')) {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Передан некорректный _id пользователя' });
-      return;
-    }
-  }
-
-  console.error(err);
-  res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'На сервере произошла ошибка' });
-};
-
+app.use(errors());
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(config.PORT, () => {
+  console.log(`Сервер запущен на порту ${config.PORT}`);
 });
+
+export default app;

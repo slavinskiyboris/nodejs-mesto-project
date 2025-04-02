@@ -13,8 +13,12 @@
   "author": "Aleksandr Kovalev",
   "license": "ISC",
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.8",
     "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.13.12",
+    "@types/validator": "^13.12.3",
     "@typescript-eslint/eslint-plugin": "^8.27.0",
     "@typescript-eslint/parser": "^8.27.0",
     "eslint": "^8.2.0",
@@ -25,7 +29,13 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "celebrate": "^15.0.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongoose": "^8.12.2"
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.12.2",
+    "validator": "^13.11.0"
   }
 }

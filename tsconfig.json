@@ -18,9 +18,13 @@
       "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
     },
     "include": [
-      "src/**/*.ts"
+      "src/**/*.ts",
+      "src/global.d.ts"
     ],
     "exclude": [
       "node_modules"
     ],
+    "files": [
+      "src/global.d.ts"
+    ]
   }
